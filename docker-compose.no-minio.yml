@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  presign-api:
+    build: .
+    image: s3-presign-api:local
+    ports:
+      - "8000:8000"
+    environment:
+      # Provide your real credentials or override via env when running compose
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-AKIA_TEST_ACCESS_KEY_1234}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-TEST_SECRET_KEY_1234567890abcdef1234567890abcd}
+      AWS_REGION: ${AWS_REGION:-eu-central-1}
+      # Point this at your external S3-compatible endpoint (e.g. https://s3.g.s4.mega.io)
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-https://s3.g.s4.mega.io}
+      # Use 'path' if your provider requires path-style addressing
+      S3_ADDRESSING_STYLE: ${S3_ADDRESSING_STYLE:-path}
+    restart: unless-stopped
