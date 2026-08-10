@@ -46,7 +46,7 @@ Then request a presigned URL as usual; the service will sign URLs against the cu
   ```bash
   curl -s -X POST http://localhost:8000/presign \
     -H "Content-Type: application/json" \
-    -d '{"bucket":"vcds","key":".wslconfig","operation":"get","expires":3600,"addressing_style":"path","endpoint_url":"https://s3.g.s4.mega.io","region":"eu-central-1"}' | jq
+    -d '{"bucket":"bucket-name","key":"filename","operation":"get","expires":3600,"addressing_style":"path","endpoint_url":"https://s3.g.s4.mega.io","region":"eu-central-1"}' | jq
   ```
 
 Files:
