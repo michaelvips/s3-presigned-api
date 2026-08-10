@@ -4,6 +4,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import boto3
+from botocore.config import Config
 
 
 class PresignRequest(BaseModel):
@@ -13,12 +14,13 @@ class PresignRequest(BaseModel):
     expires: int = 3600
     region: Optional[str] = None
     endpoint_url: Optional[str] = None
+    addressing_style: Optional[str] = None
 
 
 app = FastAPI(title="S3 Presign API")
 
 
-def s3_client(region: Optional[str] = None, endpoint_url: Optional[str] = None):
+def s3_client(region: Optional[str] = None, endpoint_url: Optional[str] = None, addressing_style: Optional[str] = None):
     # Allow overriding the endpoint via argument or environment variable (for MinIO/localstack)
     env_endpoint = os.getenv("S3_ENDPOINT_URL")
     endpoint = endpoint_url or env_endpoint or None
@@ -34,7 +36,17 @@ def s3_client(region: Optional[str] = None, endpoint_url: Optional[str] = None):
     }
     if endpoint:
         kwargs["endpoint_url"] = endpoint
-    return boto3.client("s3", **kwargs)
+    # Configure addressing style and signature version (v4)
+    cfg_kwargs = {"signature_version": "s3v4"}
+    if addressing_style:
+        cfg_kwargs["s3"] = {"addressing_style": addressing_style}
+    else:
+        env_addr = os.getenv("S3_ADDRESSING_STYLE")
+        if env_addr:
+            cfg_kwargs["s3"] = {"addressing_style": env_addr}
+
+    config = Config(**cfg_kwargs)
+    return boto3.client("s3", config=config, **kwargs)
 
 
 @app.post("/presign")
@@ -44,7 +56,7 @@ async def presign(req: PresignRequest):
     if op not in op_map:
         raise HTTPException(status_code=400, detail="operation must be 'put' or 'get'")
 
-    client = s3_client(req.region, req.endpoint_url)
+    client = s3_client(req.region, req.endpoint_url, req.addressing_style)
     try:
         url = client.generate_presigned_url(
             ClientMethod=op_map[op], Params={"Bucket": req.bucket, "Key": req.key}, ExpiresIn=req.expires

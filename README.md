@@ -39,6 +39,16 @@ docker run -p 8000:8000 \
 
 Then request a presigned URL as usual; the service will sign URLs against the custom endpoint.
 
+  If your S3-compatible service uses path-style addressing (common for some providers), set `S3_ADDRESSING_STYLE=path` or include `"addressing_style":"path"` in the request JSON.
+
+  Example request forcing path addressing in the request body:
+
+  ```bash
+  curl -s -X POST http://localhost:8000/presign \
+    -H "Content-Type: application/json" \
+    -d '{"bucket":"vcds","key":".wslconfig","operation":"get","expires":3600,"addressing_style":"path","endpoint_url":"https://s3.g.s4.mega.io","region":"eu-central-1"}' | jq
+  ```
+
 Files:
 - [app/main.py](app/main.py) - FastAPI app exposing `POST /presign` and `GET /health`
 - [Dockerfile](Dockerfile) - Docker image definition
